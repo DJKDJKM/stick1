@@ -78,9 +78,31 @@ Pure vanilla JS — no build step, no dependencies. Open `index.html` and play.
 | **Mythic** | 175 🪙 | +15% speed/jump · -15% gravity · rainbow trail |
 | **Cosmic** | 220 🪙 | TRIPLE jump · all-stats maxed · rainbow trail |
 
-## 🏆 Achievements (14)
+## 🏆 Achievements (16)
 
-First Steps · Persistent · Coin Collector · Untouchable · Speed Demon · Wall Crawler · Sky High · Fashionista · Chapter Done · Loaded · Bouncy Boy · Boost Master · Drip Master · World Master.
+First Steps · Persistent · Coin Collector · Untouchable · Speed Demon · Wall Crawler · Sky High · Fashionista · Chapter Done · Loaded · Bouncy Boy · Boost Master · Pet Owner · On Fire · Drip Master · World Master.
+
+## 🐾 Pets
+
+7 unlockable pet companions that follow you around the level and grant perks that **stack with your skin**:
+
+| Pet | Cost | Perk |
+| --- | ---: | --- |
+| None | Free | — |
+| Cube Pal | 20 🪙 | +5% jump |
+| Mini Ghost | 35 🪙 | +5% speed |
+| Star Pal | 55 🪙 | +1 wallet coin per pickup |
+| Flame Buddy | 80 🪙 | +60% boost regen |
+| Crystal | 110 🪙 | -10% gravity |
+| Rainbow Orb | 180 🪙 | +5% everything + rainbow trail |
+
+## 🎵 Background music + ⚙️ Settings
+
+Procedural chiptune lead + bassline loops while you play. Toggle music and SFX independently from the **Settings** menu. Includes a "Reset all progress" button with confirm prompt.
+
+## 🔥 Combo system
+
+Collect coins in quick succession (under 2.5s between pickups) to build a combo multiplier. Each successive coin gives **+1 bonus wallet coin per combo step**. Combos display in the HUD with a draining timer bar. New achievement: **On Fire** — reach a x5 combo.
 
 ## ⚡ The Boost meter
 

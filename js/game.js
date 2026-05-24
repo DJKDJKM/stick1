@@ -57,19 +57,25 @@
 
     function effectivePhysics() {
         const skin = SKINS.find(s => s.id === Save.equipped()) || SKINS[0];
-        const p = skin.perks || {};
+        const pet  = (window.PETS || []).find(p => p.id === Save.equippedPet()) || (window.PETS && PETS[0]) || { perks: {} };
+        const sp = skin.perks || {};
+        const pp = pet.perks || {};
+        const m = (a, b, dflt = 1) => (a || dflt) * (b || dflt);
+        const s = (a, b) => (a || 0) + (b || 0);
         return {
             ...BASE,
-            maxSpeed: BASE.maxSpeed * (p.speedMult || 1),
-            accelGround: BASE.accelGround * (p.speedMult || 1),
-            accelAir: BASE.accelAir * (p.speedMult || 1),
-            jump: BASE.jump * (p.jumpMult || 1),
-            doubleJump: BASE.doubleJump * (p.jumpMult || 1),
-            gravity: BASE.gravity * (p.gravityMult || 1),
-            wallSlideFall: BASE.wallSlideFall * (p.wallSlideFallMult || 1),
-            coyote: BASE.coyote + (p.coyoteBonus || 0),
-            airJumps: p.airJumps || 1,
-            trail: p.trail || null,
+            maxSpeed: BASE.maxSpeed * m(sp.speedMult, pp.speedMult),
+            accelGround: BASE.accelGround * m(sp.speedMult, pp.speedMult),
+            accelAir: BASE.accelAir * m(sp.speedMult, pp.speedMult),
+            jump: BASE.jump * m(sp.jumpMult, pp.jumpMult),
+            doubleJump: BASE.doubleJump * m(sp.jumpMult, pp.jumpMult),
+            gravity: BASE.gravity * m(sp.gravityMult, pp.gravityMult),
+            wallSlideFall: BASE.wallSlideFall * m(sp.wallSlideFallMult, pp.wallSlideFallMult),
+            coyote: BASE.coyote + s(sp.coyoteBonus, pp.coyoteBonus),
+            airJumps: Math.max(sp.airJumps || 1, pp.airJumps || 1),
+            trail: sp.trail || pp.trail || null,
+            boostRegenMult: m(sp.boostRegenMult, pp.boostRegenMult),
+            coinBonus: s(sp.coinBonus, pp.coinBonus),
         };
     }
 
@@ -106,6 +112,9 @@
         checkpoint: null,
         level: null,
         runtime: null,
+        combo: 0,
+        comboT: 0,       // frames remaining in combo window
+        pet: { x: 0, y: 0 },
         player, ctx, VIEW_W, VIEW_H,
     };
 
@@ -200,12 +209,16 @@
         resetPlayer(game.level.spawn.x, game.level.spawn.y);
         game.cameraX = player.x - VIEW_W / 2;
         game.cameraY = player.y - VIEW_H / 2;
+        game.pet.x = player.x; game.pet.y = player.y;
+        game.combo = 0; game.comboT = 0;
         game.startTime = performance.now();
         game.elapsedTime = 0;
         game.state = 'playing';
         refreshHud();
         showHud(true);
         showMenu(false);
+        // Start background music if enabled
+        if (Save.settings().musicOn) { SFX.ensure(); Music.start(); }
         if (!loopRunning) { loopRunning = true; requestAnimationFrame(loop); }
     }
 
@@ -231,12 +244,14 @@
     function pauseGame() {
         if (game.state !== 'playing') return;
         game.state = 'paused';
+        Music.stop();
         showMenu(true, 'screen-pause');
     }
     function resumeGame() {
         if (game.state !== 'paused') return;
         game.state = 'playing';
         showMenu(false);
+        if (Save.settings().musicOn) Music.start();
         game.startTime = performance.now() - game.elapsedTime * 1000;
     }
 
@@ -279,7 +294,9 @@
             // coins picked up so far this attempt stay banked in wallet,
             // but the in-level counter resets for clarity
             game.coinsThisRun = 0;
+            game.combo = 0; game.comboT = 0;
             resetPlayer(sp.x, sp.y);
+            game.pet.x = player.x; game.pet.y = player.y;
             game.ragdoll = null;
             game.state = 'playing';
             refreshHud();
@@ -304,6 +321,10 @@
 
         spawnParticles(game.level.goal.x + game.level.goal.w / 2, game.level.goal.y, 30,
             { spread: 6, life: 60, color: '#ffd166', up: 4, gravity: 0.1, r: 2 });
+        // Confetti
+        Render.spawnConfetti(game, player.x + player.w / 2, player.y + player.h / 2);
+        // Stop music briefly to let win SFX shine
+        Music.stop();
 
         const isFinal = idx >= LEVELS.length - 1;
         document.getElementById('result-title').textContent =
@@ -394,9 +415,10 @@
             }
         }
 
-        // Passive boost-meter regen
+        // Passive boost-meter regen (boosted by skin/pet perks)
         if (player.boost < BASE.boostMax) {
-            player.boost = Math.min(BASE.boostMax, player.boost + BASE.boostRegen);
+            const regen = BASE.boostRegen * (eff.boostRegenMult || 1);
+            player.boost = Math.min(BASE.boostMax, player.boost + regen);
         }
 
         // Slide start
@@ -593,12 +615,26 @@
             if (dx * dx + dy * dy < 22 * 22) {
                 c.taken = true;
                 game.coinsThisRun++;
-                Save.addCoins(1);
+                // Combo: stays alive if you pick up another within 2.5s
+                game.combo = (game.comboT > 0) ? game.combo + 1 : 1;
+                game.comboT = 150;
+                if (game.combo > (Save.stat('maxCombo') || 0)) {
+                    Save.data.stats.maxCombo = game.combo;
+                }
+                // Wallet gain: 1 coin + (combo-1) bonus + skin/pet coinBonus
+                const gain = 1 + (game.combo > 1 ? game.combo - 1 : 0) + (eff.coinBonus || 0);
+                Save.addCoins(gain);
                 Save.incStat('coinsEver', 1);
                 player.boost = Math.min(BASE.boostMax, player.boost + BASE.boostFromCoin);
-                SFX.coin();
+                if (game.combo >= 2) SFX.combo(Math.min(game.combo - 2, 6)); else SFX.coin();
                 refreshHud();
-                spawnParticles(c.x, c.y, 8, { spread: 4, life: 24, color: '#ffd166', gravity: -0.05, r: 2 });
+                // floating combo text via particles (golden burst)
+                spawnParticles(c.x, c.y, 8 + Math.min(game.combo, 8),
+                    { spread: 4, life: 24, color: '#ffd166', gravity: -0.05, r: 2 });
+                if (game.combo >= 3) {
+                    // bigger burst on milestones
+                    spawnParticles(c.x, c.y, 14, { spread: 6, life: 28, color: '#ff5d8f', up: 2, gravity: -0.05, r: 2 });
+                }
             }
         }
 
@@ -664,8 +700,31 @@
             const chip = $('boost-chip');
             if (chip) chip.classList.toggle('full', player.boost >= BASE.boostCost);
         }
+        // Combo chip live updates
+        const comboChip = $('combo-chip');
+        if (comboChip) {
+            if (game.combo >= 2 && game.comboT > 0) {
+                comboChip.classList.remove('hidden');
+                $('combo-value').textContent = 'x' + game.combo;
+                $('combo-bar-fill').style.width = (game.comboT / 150) * 100 + '%';
+            } else {
+                comboChip.classList.add('hidden');
+            }
+        }
 
         player.animT += Math.abs(player.vx) * 0.07 + 0.04;
+
+        // Combo decay
+        if (game.comboT > 0) {
+            game.comboT--;
+            if (game.comboT === 0) game.combo = 0;
+        }
+
+        // Pet follow (smoothly lerps to a position behind the player)
+        const petTargetX = player.x + player.w / 2 - player.facing * 22;
+        const petTargetY = player.y + player.h / 2 - 12 + Math.sin(game.runtime.time * 0.08) * 4;
+        game.pet.x += (petTargetX - game.pet.x) * 0.15;
+        game.pet.y += (petTargetY - game.pet.y) * 0.15;
 
         updateParticles();
         updateCamera();
@@ -731,6 +790,7 @@
             Render.drawGoal(game);
             Render.drawHazards(game);
             Render.drawParticles(game);
+            Render.drawPet(game);
             if (game.state === 'dying') Render.drawRagdoll(game);
             else Render.drawPlayer(game);
         } else {
@@ -747,7 +807,8 @@
         $('menu').classList.toggle('hidden', !on);
         for (const s of ['screen-main', 'screen-levels', 'screen-controls',
                          'screen-result', 'screen-pause', 'screen-win',
-                         'screen-shop', 'screen-daily', 'screen-achievements']) {
+                         'screen-shop', 'screen-daily', 'screen-achievements',
+                         'screen-pets', 'screen-settings']) {
             $(s).classList.toggle('hidden', s !== screenId);
         }
     }
@@ -760,6 +821,16 @@
         $('wallet').textContent = Save.coins();
         const best = Save.getBest(game.levelIndex);
         $('best-time').textContent = best ? best.toFixed(2) + 's' : '—';
+        // Combo chip
+        const comboChip = $('combo-chip');
+        if (comboChip) {
+            if (game.combo >= 2) {
+                comboChip.classList.remove('hidden');
+                $('combo-value').textContent = game.combo;
+            } else {
+                comboChip.classList.add('hidden');
+            }
+        }
     }
 
     function buildLevelGrid() {
@@ -815,6 +886,70 @@
             `;
             list.appendChild(row);
         }
+    }
+
+    function buildPets() {
+        $('wallet-pets').textContent = Save.coins();
+        const grid = $('pets-grid');
+        grid.innerHTML = '';
+        for (const p of (window.PETS || [])) {
+            const owned = Save.ownPet(p.id);
+            const equipped = Save.equippedPet() === p.id;
+            const tile = document.createElement('div');
+            tile.className = 'shop-tile' + (equipped ? ' equipped' : '') + (owned ? ' owned' : '');
+
+            const canvasEl = document.createElement('canvas');
+            canvasEl.width = 80; canvasEl.height = 80;
+            canvasEl.className = 'skin-canvas';
+            tile.appendChild(canvasEl);
+
+            const name = document.createElement('div');
+            name.className = 'skin-name';
+            name.textContent = p.name;
+            tile.appendChild(name);
+
+            const desc = document.createElement('div');
+            desc.className = 'skin-desc';
+            desc.textContent = p.desc;
+            tile.appendChild(desc);
+
+            const action = document.createElement('button');
+            action.className = 'skin-action';
+            if (equipped) { action.textContent = 'EQUIPPED'; action.disabled = true; }
+            else if (owned) action.textContent = 'Equip';
+            else action.textContent = `Buy · ${p.cost} 🪙`;
+            tile.appendChild(action);
+
+            action.addEventListener('click', e => {
+                e.stopPropagation();
+                if (Save.equippedPet() === p.id) return;
+                if (Save.ownPet(p.id)) {
+                    Save.equipPet(p.id);
+                    SFX.buy();
+                    buildPets();
+                    return;
+                }
+                const r = Save.buyPet(p.id, p.cost);
+                if (r === 'ok') {
+                    Save.equipPet(p.id);
+                    SFX.buy();
+                    buildPets();
+                    refreshHud();
+                } else if (r === 'broke') {
+                    SFX.deny();
+                    action.textContent = 'Not enough 🪙';
+                    setTimeout(buildPets, 700);
+                }
+            });
+            grid.appendChild(tile);
+            Render.renderPetIcon(canvasEl, p.id);
+        }
+    }
+
+    function buildSettings() {
+        const s = Save.settings();
+        $('set-music').checked = !!s.musicOn;
+        $('set-sfx').checked   = !!s.sfxOn;
     }
 
     // ---- Achievement toast ----------------------------------
@@ -929,6 +1064,26 @@
     $('daily-btn').addEventListener('click', () => { buildDaily(); showMenu(true, 'screen-daily'); });
     $('achievements-btn').addEventListener('click', () => { buildAchievements(); showMenu(true, 'screen-achievements'); });
     $('back-from-achievements').addEventListener('click', () => showMenu(true, 'screen-main'));
+    $('pets-btn').addEventListener('click', () => { buildPets(); showMenu(true, 'screen-pets'); });
+    $('back-from-pets').addEventListener('click', () => showMenu(true, 'screen-main'));
+    $('settings-btn').addEventListener('click', () => { buildSettings(); showMenu(true, 'screen-settings'); });
+    $('back-from-settings').addEventListener('click', () => showMenu(true, 'screen-main'));
+
+    $('set-music').addEventListener('change', e => {
+        Save.setSetting('musicOn', e.target.checked);
+        SFX.applyMute();
+        if (e.target.checked && game.state === 'playing') Music.start();
+        else Music.stop();
+    });
+    $('set-sfx').addEventListener('change', e => {
+        Save.setSetting('sfxOn', e.target.checked);
+        SFX.applyMute();
+    });
+    $('reset-save-btn').addEventListener('click', () => {
+        if (confirm('Reset ALL progress (coins, skins, pets, bests, achievements)?')) {
+            Save.resetAll();
+        }
+    });
 
     $('back-from-levels').addEventListener('click', () => showMenu(true, 'screen-main'));
     $('back-from-controls').addEventListener('click', () => showMenu(true, 'screen-main'));
@@ -958,11 +1113,12 @@
     });
     $('restart-btn').addEventListener('click', () => enterLevel(game.levelIndex));
     $('result-menu-btn').addEventListener('click', () => {
+        Music.stop();
         buildLevelGrid(); showMenu(true, 'screen-levels'); showHud(false); game.state = 'menu';
     });
     $('resume-btn').addEventListener('click', resumeGame);
     $('pause-restart-btn').addEventListener('click', () => enterLevel(game.levelIndex));
-    $('pause-menu-btn').addEventListener('click', () => { game.state = 'menu'; showHud(false); showMenu(true, 'screen-main'); });
+    $('pause-menu-btn').addEventListener('click', () => { Music.stop(); game.state = 'menu'; showHud(false); showMenu(true, 'screen-main'); });
     $('win-again-btn').addEventListener('click', () => enterLevel(0));
 
     function refreshDailyBadge() {

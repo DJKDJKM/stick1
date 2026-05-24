@@ -21,6 +21,9 @@
                 <div class="hud-chip boost-chip" id="boost-chip">⚡ BOOST
                     <div class="boost-bar"><div class="boost-fill" id="boost-fill"></div></div>
                 </div>
+                <div class="hud-chip combo-chip hidden" id="combo-chip">🔥 COMBO <span id="combo-value">x2</span>
+                    <div class="combo-bar"><div class="combo-bar-fill" id="combo-bar-fill"></div></div>
+                </div>
             </div>
             <div class="hud-row hud-controls">
                 <span>A / D — move</span>
@@ -42,9 +45,11 @@
                     <button class="primary" id="start-btn">Play</button>
                     <button id="levels-btn">Level Select</button>
                     <button id="shop-btn">🛍️ Skin Shop</button>
+                    <button id="pets-btn">🐾 Pet Shop</button>
                     <button id="daily-btn">🎁 Daily Reward</button>
                     <button id="achievements-btn">🏆 Achievements</button>
                     <button id="controls-btn">Controls</button>
+                    <button id="settings-btn">⚙️ Settings</button>
                 </div>
 
                 <div id="screen-levels" class="screen hidden">
@@ -105,6 +110,32 @@
                     <p id="ach-summary" class="hint">0 / 0 unlocked</p>
                     <div id="achievements-list"></div>
                     <button id="back-from-achievements">Back</button>
+                </div>
+
+                <div id="screen-pets" class="screen hidden">
+                    <div class="shop-header">
+                        <h2>🐾 Pet Shop</h2>
+                        <div class="wallet-chip">🪙 <span id="wallet-pets">0</span></div>
+                    </div>
+                    <p class="hint">Pets follow you and grant perks that stack with your skin.</p>
+                    <div id="pets-grid"></div>
+                    <button id="back-from-pets">Back</button>
+                </div>
+
+                <div id="screen-settings" class="screen hidden">
+                    <h2>⚙️ Settings</h2>
+                    <div class="settings-list">
+                        <label class="settings-row">
+                            <span>🎵 Background music</span>
+                            <input type="checkbox" id="set-music">
+                        </label>
+                        <label class="settings-row">
+                            <span>🔊 Sound effects</span>
+                            <input type="checkbox" id="set-sfx">
+                        </label>
+                    </div>
+                    <button id="reset-save-btn" class="danger">Reset all progress…</button>
+                    <button id="back-from-settings">Back</button>
                 </div>
 
                 <div id="screen-win" class="screen hidden">

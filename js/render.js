@@ -447,6 +447,79 @@
         piece(skin.fill, skin.fill, 3.6);
     }
 
+    function drawPet(g) {
+        const ctx = g.ctx;
+        const pet = (window.PETS || []).find(p => p.id === Save.equippedPet());
+        if (!pet || pet.id === 'none') return;
+        if (!g.pet) return;
+        const x = g.pet.x, y = g.pet.y;
+        const t = g.runtime ? g.runtime.time : 0;
+
+        // glow + main shape
+        ctx.save();
+        const color = pet.color === 'rainbow'
+            ? `hsl(${(t * 6) % 360}, 80%, 65%)`
+            : pet.color;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 10;
+        ctx.fillStyle = color;
+        ctx.strokeStyle = pet.outline || '#000';
+        ctx.lineWidth = 2;
+        const r = 9;
+        if (pet.shape === 'square') {
+            ctx.fillRect(x - r, y - r, r * 2, r * 2);
+            ctx.strokeRect(x - r, y - r, r * 2, r * 2);
+        } else if (pet.shape === 'triangle') {
+            ctx.beginPath();
+            ctx.moveTo(x, y - r);
+            ctx.lineTo(x + r, y + r);
+            ctx.lineTo(x - r, y + r);
+            ctx.closePath();
+            ctx.fill(); ctx.stroke();
+        } else if (pet.shape === 'star') {
+            ctx.beginPath();
+            for (let i = 0; i < 10; i++) {
+                const a = -Math.PI / 2 + i * Math.PI / 5;
+                const rr = i % 2 === 0 ? r : r * 0.45;
+                const px = x + Math.cos(a) * rr;
+                const py = y + Math.sin(a) * rr;
+                if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+            ctx.fill(); ctx.stroke();
+        } else { // orb / circle / default
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        }
+        // little eye
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#1a1132';
+        ctx.beginPath();
+        ctx.arc(x + 2, y - 2, 1.4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    // confetti spawn helper (used from game.js at win)
+    function spawnConfetti(g, cx, cy) {
+        const colors = ['#ef476f', '#ffd166', '#06d6a0', '#118ab2', '#a3ffd8', '#ff9bbf', '#9be7ff'];
+        for (let i = 0; i < 80; i++) {
+            g.particles.push({
+                x: cx + (Math.random() - 0.5) * 80,
+                y: cy - 20 - Math.random() * 40,
+                vx: (Math.random() - 0.5) * 5,
+                vy: -3 - Math.random() * 6,
+                life: 60 + Math.random() * 30,
+                age: 0,
+                r: 2 + Math.random() * 2,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                gravity: 0.2,
+            });
+        }
+    }
+
     function drawIdleBackdrop(ctx, W, H) {
         const grad = ctx.createLinearGradient(0, 0, 0, H);
         grad.addColorStop(0, '#2b1d4a');
@@ -517,9 +590,62 @@
         ctx.beginPath(); ctx.arc(cx + 2, cy - 31, 1.4, 0, Math.PI * 2); ctx.fill();
     }
 
+    function renderPetIcon(canvas, petId) {
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width, h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+        const pet = (window.PETS || []).find(p => p.id === petId) || (window.PETS && PETS[0]);
+        if (!pet) return;
+        const grad = ctx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, 'rgba(255,255,255,0.06)');
+        grad.addColorStop(1, 'rgba(0,0,0,0.2)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+
+        const x = w / 2, y = h / 2 + 4;
+        if (pet.id === 'none') {
+            ctx.fillStyle = '#666';
+            ctx.font = 'bold 14px Segoe UI';
+            ctx.textAlign = 'center';
+            ctx.fillText('—', x, y);
+            return;
+        }
+        const color = pet.color === 'rainbow' ? '#ff8ad9' : pet.color;
+        ctx.save();
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 14;
+        ctx.fillStyle = color;
+        ctx.strokeStyle = pet.outline || '#000';
+        ctx.lineWidth = 2;
+        const r = 18;
+        if (pet.shape === 'square') {
+            ctx.fillRect(x - r, y - r, r * 2, r * 2);
+            ctx.strokeRect(x - r, y - r, r * 2, r * 2);
+        } else if (pet.shape === 'triangle') {
+            ctx.beginPath(); ctx.moveTo(x, y - r); ctx.lineTo(x + r, y + r); ctx.lineTo(x - r, y + r); ctx.closePath();
+            ctx.fill(); ctx.stroke();
+        } else if (pet.shape === 'star') {
+            ctx.beginPath();
+            for (let i = 0; i < 10; i++) {
+                const a = -Math.PI / 2 + i * Math.PI / 5;
+                const rr = i % 2 === 0 ? r : r * 0.45;
+                const px = x + Math.cos(a) * rr;
+                const py = y + Math.sin(a) * rr;
+                if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+            ctx.fill(); ctx.stroke();
+        } else {
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fill(); ctx.stroke();
+        }
+        ctx.restore();
+    }
+
     window.Render = {
         drawBackground, drawLevel, drawHazards, drawCoins, drawCheckpoint, drawGoal,
         drawParticles, drawPlayer, drawRagdoll, drawIdleBackdrop, renderSkinIcon,
-        getSkinColors, drawBouncers, drawBoosters,
+        getSkinColors, drawBouncers, drawBoosters, drawPet, spawnConfetti, renderPetIcon,
     };
 })();

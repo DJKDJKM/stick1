@@ -33,8 +33,15 @@
     data.stats.doubleJumps   = data.stats.doubleJumps   || 0;
     data.stats.wallJumps     = data.stats.wallJumps     || 0;
     data.stats.bounces       = data.stats.bounces       || 0;
+    data.stats.boosts        = data.stats.boosts        || 0;
+    data.stats.maxCombo      = data.stats.maxCombo      || 0;
     data.stats.perfectLevels = data.stats.perfectLevels || {};
     data.achievements  = data.achievements  || {};
+    data.ownedPets     = data.ownedPets     || { none: true };
+    data.equippedPet   = data.equippedPet   || 'none';
+    data.settings      = data.settings      || {};
+    if (data.settings.musicOn === undefined) data.settings.musicOn = true;
+    if (data.settings.sfxOn   === undefined) data.settings.sfxOn   = true;
 
     // Migrate legacy v1 save if present
     try {
@@ -60,6 +67,7 @@
             completed: data.completed,
             deaths: data.deaths,
             ownedSkins: data.ownedSkins,
+            ownedPets: data.ownedPets,
             stats: data.stats,
         };
     }
@@ -151,6 +159,39 @@
         hasAchievement(id) { return !!data.achievements[id]; },
         onAchievementUnlocked(fn) { onAchievement = fn; },
         forceAchievementCheck() { return checkAchievements(); },
+
+        // Pets -----------------------------------------------
+        ownPet(id) { return !!data.ownedPets[id]; },
+        equippedPet() { return data.equippedPet; },
+        equipPet(id) {
+            if (!data.ownedPets[id]) return false;
+            data.equippedPet = id;
+            persist();
+            return true;
+        },
+        buyPet(id, cost) {
+            if (data.ownedPets[id]) return 'owned';
+            if (data.coins < cost) return 'broke';
+            data.coins -= cost;
+            data.ownedPets[id] = true;
+            persist();
+            checkAchievements();
+            return 'ok';
+        },
+
+        // Settings -------------------------------------------
+        settings() { return data.settings; },
+        setSetting(key, val) {
+            data.settings[key] = val;
+            persist();
+        },
+
+        // Reset (with confirmation in UI) --------------------
+        resetAll() {
+            localStorage.removeItem(KEY);
+            localStorage.removeItem('stickman_parkour_save_v1');
+            location.reload();
+        },
 
         // Daily reward ---------------------------------------
         dailyStatus() {

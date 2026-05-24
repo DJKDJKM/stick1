@@ -122,6 +122,25 @@ window.SKINS = [
     },
 ];
 
+// ------ Pets (Roblox-style followers, stack with skins) -----
+// shape: 'circle' | 'square' | 'star' | 'triangle' | 'orb'
+window.PETS = [
+    { id: 'none',   name: 'None',         cost: 0,   shape: 'none',   color: '#888', outline: '#000',
+      desc: 'No pet equipped.', perks: {} },
+    { id: 'cube',   name: 'Cube Pal',     cost: 20,  shape: 'square', color: '#5bc0eb', outline: '#0a2236',
+      desc: '+5% jump',                  perks: { jumpMult: 1.05 } },
+    { id: 'ghost',  name: 'Mini Ghost',   cost: 35,  shape: 'orb',    color: '#f4f0ff', outline: '#222',
+      desc: '+5% movement speed',        perks: { speedMult: 1.05 } },
+    { id: 'star',   name: 'Star Pal',     cost: 55,  shape: 'star',   color: '#ffd166', outline: '#a87b1f',
+      desc: '+1 wallet coin per pickup', perks: { coinBonus: 1 } },
+    { id: 'flame',  name: 'Flame Buddy',  cost: 80,  shape: 'triangle', color: '#ff5d5d', outline: '#3a0d0d',
+      desc: '+60% boost regen',          perks: { boostRegenMult: 1.6 } },
+    { id: 'crystal',name: 'Crystal',      cost: 110, shape: 'star',   color: '#00f5d4', outline: '#06363a',
+      desc: '-10% gravity',              perks: { gravityMult: 0.90 } },
+    { id: 'rainbow',name: 'Rainbow Orb',  cost: 180, shape: 'orb',    color: 'rainbow', outline: '#1a1132',
+      desc: '+5% all stats · trail',     perks: { speedMult: 1.05, jumpMult: 1.05, boostRegenMult: 1.4, trail: 'rainbow' } },
+];
+
 // ------ Chapters (grouping for level select) ---------------
 window.CHAPTERS = [
     { name: 'Beginnings', start: 0, end: 5 },
@@ -164,6 +183,10 @@ window.ACHIEVEMENTS = [
       check: s => (s.stats.boosts || 0) >= 25 },
     { id: 'all_skins',      name: 'Drip Master',    desc: 'Own all 15 skins',                icon: '👑',
       check: s => Object.keys(s.ownedSkins).length >= SKINS.length },
+    { id: 'pet_owner',      name: 'Pet Owner',      desc: 'Own at least one pet',            icon: '🐾',
+      check: s => Object.keys(s.ownedPets || {}).filter(k => k !== 'none').length >= 1 },
+    { id: 'combo_3',        name: 'On Fire',        desc: 'Reach a x5 coin combo',           icon: '🔥',
+      check: s => (s.stats.maxCombo || 0) >= 5 },
     { id: 'world_master',   name: 'World Master',   desc: 'Complete every level',            icon: '🌟',
       check: s => Object.keys(s.completed).length >= LEVELS.length },
 ];
