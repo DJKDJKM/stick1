@@ -13,7 +13,8 @@ Pure vanilla JS — no build step, no dependencies. Open `index.html` and play.
 ## ✨ Features
 
 ### Gameplay
-- **35 hand-designed levels** organized into **6 chapters** (Beginnings → Skills → Variety → Heights → Bounce → Mastery)
+- **45 hand-designed levels** organized into **7 chapters** (Beginnings → Skills → Variety → Heights → Bounce → Mastery → **Precision**)
+- **Precision chapter** — 10 levels of 1-block-wide platforms (22-30 px) demanding pixel-perfect landings
 - **Animated stickman** with distinct poses: running, jumping, falling, sliding, wall-sliding
 - **Full move-set**: double jump, **wall slide + wall jump**, **slide-under low ceilings**, **SpeedRunners-style ⚡ boost**
 - **Smooth feel**: coyote time, jump buffering, screen shake, parallax background, particle effects
@@ -29,10 +30,11 @@ Pure vanilla JS — no build step, no dependencies. Open `index.html` and play.
 
 ### Roblox-style progression
 - 🪙 **Coin wallet** — collect coins in levels, earn completion bonuses (+5), best-time bonuses (+5), perfect-run bonuses (+3)
-- 🛍️ **Skin shop** with **15 unlockable characters**, each with passive perks
+- 🛍️ **Skin shop** with **19 unlockable characters**, each with passive perks
+- 🐾 **Pet shop** with **10 pet companions** that follow you and stack perks with your skin
 - ⚡ **Perks per skin** — speed, jump, gravity, triple jump, slower wall slide, coyote bonus, trail effects
 - 🎁 **7-day daily reward cycle** — 10/15/25/40/60/80/150 🪙, with pulsing badge on the menu when claimable
-- 🏆 **13 Achievements** — coin milestones, perfect runs, speed-run goals, mastery completion, drip master (all skins), etc., with toast notifications on unlock
+- 🏆 **20 Achievements** — coin milestones, perfect runs, speed-run goals, mastery completion, drip master (all skins), combo king, pixel perfect, tycoon, with toast notifications on unlock
 - 📊 **Per-level best times** + perfect-run stars + total deaths counter, all persisted to `localStorage`
 - 🗺️ **Level select** with chapter dividers, completion ticks, lock progression, and best-time stars
 
@@ -77,10 +79,14 @@ Pure vanilla JS — no build step, no dependencies. Open `index.html` and play.
 | **Vortex** | 130 🪙 | +10% speed · triple jump · cyan trail |
 | **Mythic** | 175 🪙 | +15% speed/jump · -15% gravity · rainbow trail |
 | **Cosmic** | 220 🪙 | TRIPLE jump · all-stats maxed · rainbow trail |
+| **Frost** | 60 🪙 | +30% boost regen · -10% gravity |
+| **Phantom Lord** | 95 🪙 | +10 coyote frames · +5% speed · ghost trail |
+| **Inferno** | 140 🪙 | +25% speed · +15% jump · fire trail |
+| **Stardust** | 200 🪙 | +10% all · +50% boost regen |
 
-## 🏆 Achievements (16)
+## 🏆 Achievements (20)
 
-First Steps · Persistent · Coin Collector · Untouchable · Speed Demon · Wall Crawler · Sky High · Fashionista · Chapter Done · Loaded · Bouncy Boy · Boost Master · Pet Owner · On Fire · Drip Master · World Master.
+First Steps · Persistent · Coin Collector · Untouchable · Speed Demon · Wall Crawler · Sky High · Fashionista · Chapter Done · Loaded · Bouncy Boy · Boost Master · Pet Owner · On Fire · Combo King · Speedrunner · Tycoon · Pixel Perfect · Drip Master · World Master.
 
 ## 🐾 Pets
 
@@ -95,6 +101,9 @@ First Steps · Persistent · Coin Collector · Untouchable · Speed Demon · Wal
 | Flame Buddy | 80 🪙 | +60% boost regen |
 | Crystal | 110 🪙 | -10% gravity |
 | Rainbow Orb | 180 🪙 | +5% everything + rainbow trail |
+| Cloud Puff | 25 🪙 | +2 coyote frames |
+| Dragon Egg | 90 🪙 | +30% boost regen |
+| Phoenix | 160 🪙 | +5% jump · +30% boost regen · fire trail |
 
 ## 🎵 Background music + ⚙️ Settings
 

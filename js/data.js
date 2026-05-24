@@ -12,6 +12,7 @@ window.PALETTES = {
     arctic:  { sky1: '#7fc7ff', sky2: '#1a3a5c', plat: '#2d4666', platTop: '#a9e9ff', accent: '#ffffff' },
     candy:   { sky1: '#ffaee8', sky2: '#6b2d8a', plat: '#5a2a6e', platTop: '#ff6dcb', accent: '#fff5a8' },
     desert:  { sky1: '#ffb56b', sky2: '#5c2e1f', plat: '#6e3c20', platTop: '#ffd28c', accent: '#ffe066' },
+    cosmic:  { sky1: '#240046', sky2: '#000000', plat: '#3d1a73', platTop: '#c77dff', accent: '#fff7c2' },
 };
 
 // ------ Skins ----------------------------------------------
@@ -120,6 +121,34 @@ window.SKINS = [
             coyoteBonus: 6, wallSlideFallMult: 0.6, airJumps: 2, trail: 'rainbow',
         },
     },
+    // ---- Late-game skins -----------------------------------
+    {
+        id: 'frost', name: 'Frost', cost: 60,
+        fill: '#cfeeff', outline: '#1a3a5c', eye: '#1a3a5c',
+        desc: '+30% boost regen · -10% gravity',
+        perks: { boostRegenMult: 1.3, gravityMult: 0.90 },
+    },
+    {
+        id: 'phantomlord', name: 'Phantom Lord', cost: 95,
+        fill: '#dcd6ff', outline: '#1a0d2a', eye: '#1a0d2a',
+        desc: '+10 coyote frames · +5% speed · ghost trail',
+        perks: { coyoteBonus: 10, speedMult: 1.05, trail: '#cfc7ff' },
+    },
+    {
+        id: 'inferno', name: 'Inferno', cost: 140,
+        fill: '#ff7a3a', outline: '#3a0a00', eye: '#fff', accent: '#ffd166',
+        desc: '+25% speed · +15% jump · fire trail',
+        perks: { speedMult: 1.25, jumpMult: 1.15, trail: '#ff7a3a' },
+    },
+    {
+        id: 'stardust', name: 'Stardust', cost: 200,
+        fill: '#fff7c2', outline: '#1a1132', eye: '#1a1132', accent: '#5bc0eb',
+        desc: '+10% all · +50% boost regen · subtle elegance',
+        perks: {
+            speedMult: 1.10, jumpMult: 1.10, gravityMult: 0.90,
+            boostRegenMult: 1.5, coyoteBonus: 4,
+        },
+    },
 ];
 
 // ------ Pets (Roblox-style followers, stack with skins) -----
@@ -139,6 +168,13 @@ window.PETS = [
       desc: '-10% gravity',              perks: { gravityMult: 0.90 } },
     { id: 'rainbow',name: 'Rainbow Orb',  cost: 180, shape: 'orb',    color: 'rainbow', outline: '#1a1132',
       desc: '+5% all stats · trail',     perks: { speedMult: 1.05, jumpMult: 1.05, boostRegenMult: 1.4, trail: 'rainbow' } },
+    { id: 'cloud',  name: 'Cloud Puff',   cost: 25,  shape: 'orb',    color: '#cfe9ff', outline: '#1a3a5c',
+      desc: '+2 coyote frames',          perks: { coyoteBonus: 2 } },
+    { id: 'dragon', name: 'Dragon Egg',   cost: 90,  shape: 'orb',    color: '#ff5d5d', outline: '#3a0d0d',
+      desc: '+30% boost regen',          perks: { boostRegenMult: 1.3 } },
+    { id: 'phoenix',name: 'Phoenix',      cost: 160, shape: 'star',   color: '#ff9847', outline: '#3a1a0d',
+      desc: '+5% jump · +30% boost regen · fire trail',
+      perks: { jumpMult: 1.05, boostRegenMult: 1.3, trail: '#ff9847' } },
 ];
 
 // ------ Chapters (grouping for level select) ---------------
@@ -149,6 +185,7 @@ window.CHAPTERS = [
     { name: 'Heights',    start: 15, end: 20 },
     { name: 'Bounce',     start: 20, end: 26 },
     { name: 'Mastery',    start: 26, end: 35 },
+    { name: 'Precision',  start: 35, end: 45 },
 ];
 
 // ------ Achievements ---------------------------------------
@@ -187,6 +224,17 @@ window.ACHIEVEMENTS = [
       check: s => Object.keys(s.ownedPets || {}).filter(k => k !== 'none').length >= 1 },
     { id: 'combo_3',        name: 'On Fire',        desc: 'Reach a x5 coin combo',           icon: '🔥',
       check: s => (s.stats.maxCombo || 0) >= 5 },
+    { id: 'combo_king',     name: 'Combo King',     desc: 'Reach a x10 coin combo',          icon: '👑',
+      check: s => (s.stats.maxCombo || 0) >= 10 },
+    { id: 'speedrunner',    name: 'Speedrunner',    desc: 'Finish any level in under 8s',    icon: '🏎️',
+      check: s => Object.values(s.bestTimes).some(t => t < 8) },
+    { id: 'rich',           name: 'Tycoon',         desc: 'Hold 250 coins in your wallet',   icon: '💎',
+      check: s => s.coins >= 250 },
+    { id: 'precision',      name: 'Pixel Perfect',  desc: 'Beat any Precision-chapter level',icon: '🎯',
+      check: s => {
+          for (let i = 35; i < 45; i++) if (s.completed[i]) return true;
+          return false;
+      } },
     { id: 'world_master',   name: 'World Master',   desc: 'Complete every level',            icon: '🌟',
       check: s => Object.keys(s.completed).length >= LEVELS.length },
 ];
@@ -1609,7 +1657,391 @@ window.LEVELS.push(
     },
 );
 
+// ============================================================
+// Chapter 7 — Precision (tight 1-block-style platforms)
+// ============================================================
+// Player is 18px wide. "1-block" platforms here are 24-30px wide —
+// just enough to stand on but no margin for sloppy landings.
+window.LEVELS.push(
+    // ---- 36: Stepping Stones — tiny platforms across a pit
+    {
+        bg: 'arctic',
+        worldW: 1800, worldH: 600,
+        spawn: { x: 60, y: 480 },
+        platforms: [
+            { x: 0, y: 560, w: 200, h: 40 },
+            { x: 1600, y: 460, w: 200, h: 140 },
+            { x: 240, y: 500, w: 26, h: 12 },
+            { x: 320, y: 470, w: 26, h: 12 },
+            { x: 400, y: 440, w: 26, h: 12 },
+            { x: 480, y: 410, w: 26, h: 12 },
+            { x: 560, y: 380, w: 26, h: 12 },
+            { x: 640, y: 410, w: 26, h: 12 },
+            { x: 720, y: 440, w: 26, h: 12 },
+            { x: 800, y: 410, w: 26, h: 12 },
+            { x: 880, y: 380, w: 26, h: 12 },
+            { x: 960, y: 410, w: 26, h: 12 },
+            { x: 1040, y: 440, w: 26, h: 12 },
+            { x: 1120, y: 470, w: 26, h: 12 },
+            { x: 1200, y: 440, w: 26, h: 12 },
+            { x: 1280, y: 410, w: 26, h: 12 },
+            { x: 1360, y: 440, w: 26, h: 12 },
+            { x: 1440, y: 470, w: 26, h: 12 },
+            { x: 1520, y: 460, w: 26, h: 12 },
+        ],
+        spikes: [
+            { x: 200, y: 580, w: 1400, h: 20 },
+        ],
+        saws: [], lasers: [], movers: [], crumblers: [], bouncers: [], boosters: [],
+        coins: [
+            { x: 253, y: 470 }, { x: 413, y: 410 }, { x: 573, y: 350 }, { x: 733, y: 410 },
+            { x: 893, y: 350 }, { x: 1053, y: 410 }, { x: 1213, y: 410 }, { x: 1373, y: 410 },
+        ],
+        checkpoint: { x: 893, y: 380 },
+        goal: { x: 1700, y: 400, w: 40, h: 60 },
+    },
+
+    // ---- 37: Tight Rope — long line of 1-block platforms
+    {
+        bg: 'cyber',
+        worldW: 2200, worldH: 600,
+        spawn: { x: 60, y: 480 },
+        platforms: [
+            { x: 0, y: 560, w: 160, h: 40 },
+            { x: 2040, y: 460, w: 160, h: 140 },
+        ],
+        spikes: [
+            { x: 160, y: 580, w: 1880, h: 20 },
+        ],
+        saws: [], lasers: [], movers: [], crumblers: [], bouncers: [], boosters: [],
+        coins: [
+            { x: 245, y: 410 }, { x: 365, y: 410 }, { x: 485, y: 410 }, { x: 605, y: 410 },
+            { x: 725, y: 410 }, { x: 845, y: 410 }, { x: 965, y: 410 }, { x: 1085, y: 410 },
+            { x: 1205, y: 410 }, { x: 1325, y: 410 }, { x: 1445, y: 410 }, { x: 1565, y: 410 },
+            { x: 1685, y: 410 }, { x: 1805, y: 410 }, { x: 1925, y: 410 },
+        ],
+        goal: { x: 2120, y: 400, w: 40, h: 60 },
+    },
+
+    // ---- 38: Pixel Perfect — even smaller platforms
+    {
+        bg: 'candy',
+        worldW: 1900, worldH: 600,
+        spawn: { x: 60, y: 480 },
+        platforms: [
+            { x: 0, y: 560, w: 140, h: 40 },
+            { x: 1760, y: 460, w: 140, h: 140 },
+            { x: 200, y: 510, w: 22, h: 10 },
+            { x: 290, y: 470, w: 22, h: 10 },
+            { x: 380, y: 430, w: 22, h: 10 },
+            { x: 470, y: 390, w: 22, h: 10 },
+            { x: 560, y: 350, w: 22, h: 10 },
+            { x: 650, y: 310, w: 22, h: 10 },
+            { x: 740, y: 270, w: 22, h: 10 },
+            { x: 850, y: 270, w: 22, h: 10 },
+            { x: 950, y: 310, w: 22, h: 10 },
+            { x: 1050, y: 350, w: 22, h: 10 },
+            { x: 1150, y: 390, w: 22, h: 10 },
+            { x: 1250, y: 430, w: 22, h: 10 },
+            { x: 1350, y: 470, w: 22, h: 10 },
+            { x: 1450, y: 430, w: 22, h: 10 },
+            { x: 1550, y: 470, w: 22, h: 10 },
+            { x: 1650, y: 470, w: 22, h: 10 },
+        ],
+        spikes: [ { x: 140, y: 580, w: 1620, h: 20 } ],
+        saws: [], lasers: [], movers: [], crumblers: [], bouncers: [], boosters: [],
+        coins: [
+            { x: 301, y: 440 }, { x: 481, y: 360 }, { x: 661, y: 280 }, { x: 861, y: 240 },
+            { x: 1061, y: 320 }, { x: 1261, y: 400 }, { x: 1461, y: 400 }, { x: 1661, y: 440 },
+        ],
+        checkpoint: { x: 850, y: 250 },
+        goal: { x: 1830, y: 400, w: 40, h: 60 },
+    },
+
+    // ---- 39: Saw Dance — tiny ledges between patrolling saws
+    {
+        bg: 'cave',
+        worldW: 2200, worldH: 600,
+        spawn: { x: 60, y: 480 },
+        platforms: [
+            { x: 0, y: 560, w: 180, h: 40 },
+            { x: 2040, y: 460, w: 160, h: 140 },
+            { x: 260, y: 460, w: 26, h: 10 },
+            { x: 460, y: 420, w: 26, h: 10 },
+            { x: 660, y: 380, w: 26, h: 10 },
+            { x: 860, y: 340, w: 26, h: 10 },
+            { x: 1060, y: 380, w: 26, h: 10 },
+            { x: 1260, y: 420, w: 26, h: 10 },
+            { x: 1460, y: 380, w: 26, h: 10 },
+            { x: 1660, y: 420, w: 26, h: 10 },
+            { x: 1860, y: 460, w: 26, h: 10 },
+        ],
+        spikes: [ { x: 180, y: 580, w: 1860, h: 20 } ],
+        saws: [
+            { x: 360, y: 530, r: 20, ax: 290, bx: 430, speed: 0.014 },
+            { x: 560, y: 530, r: 20, ax: 490, bx: 630, speed: 0.014, phase: 0.5 },
+            { x: 760, y: 530, r: 20, ax: 690, bx: 830, speed: 0.014 },
+            { x: 960, y: 530, r: 20, ax: 890, bx: 1030, speed: 0.014, phase: 0.5 },
+            { x: 1160, y: 530, r: 20, ax: 1090, bx: 1230, speed: 0.014 },
+            { x: 1360, y: 530, r: 20, ax: 1290, bx: 1430, speed: 0.014, phase: 0.5 },
+            { x: 1560, y: 530, r: 20, ax: 1490, bx: 1630, speed: 0.014 },
+            { x: 1760, y: 530, r: 20, ax: 1690, bx: 1830, speed: 0.014, phase: 0.5 },
+        ],
+        lasers: [], movers: [], crumblers: [], bouncers: [], boosters: [],
+        coins: [
+            { x: 273, y: 420 }, { x: 473, y: 380 }, { x: 673, y: 340 }, { x: 873, y: 300 },
+            { x: 1073, y: 340 }, { x: 1273, y: 380 }, { x: 1473, y: 340 }, { x: 1673, y: 380 },
+        ],
+        checkpoint: { x: 873, y: 310 },
+        goal: { x: 2120, y: 400, w: 40, h: 60 },
+    },
+
+    // ---- 40: Hover Spots — needs double jump to chain
+    {
+        bg: 'sunset',
+        worldW: 2000, worldH: 600,
+        spawn: { x: 60, y: 480 },
+        platforms: [
+            { x: 0, y: 560, w: 160, h: 40 },
+            { x: 1840, y: 460, w: 160, h: 140 },
+            { x: 240, y: 480, w: 24, h: 10 },
+            { x: 380, y: 380, w: 24, h: 10 },
+            { x: 540, y: 280, w: 24, h: 10 },
+            { x: 720, y: 380, w: 24, h: 10 },
+            { x: 900, y: 280, w: 24, h: 10 },
+            { x: 1080, y: 380, w: 24, h: 10 },
+            { x: 1260, y: 280, w: 24, h: 10 },
+            { x: 1440, y: 380, w: 24, h: 10 },
+            { x: 1620, y: 280, w: 24, h: 10 },
+            { x: 1740, y: 380, w: 24, h: 10 },
+        ],
+        spikes: [ { x: 160, y: 580, w: 1680, h: 20 } ],
+        saws: [], lasers: [], movers: [], crumblers: [], bouncers: [], boosters: [],
+        coins: [
+            { x: 253, y: 440 }, { x: 393, y: 340 }, { x: 553, y: 240 },
+            { x: 733, y: 340 }, { x: 913, y: 240 }, { x: 1093, y: 340 },
+            { x: 1273, y: 240 }, { x: 1453, y: 340 }, { x: 1633, y: 240 },
+        ],
+        checkpoint: { x: 913, y: 260 },
+        goal: { x: 1920, y: 400, w: 40, h: 60 },
+    },
+
+    // ---- 41: Wall Tap — micro wall jumps between thin walls
+    {
+        bg: 'night',
+        worldW: 1200, worldH: 1400,
+        spawn: { x: 80, y: 1300 },
+        platforms: [
+            { x: 0, y: 1360, w: 1200, h: 40 },
+            // thin walls forming a tight wall-jump shaft
+            { x: 280, y: 1140, w: 20, h: 220 },
+            { x: 420, y: 1000, w: 20, h: 220 },
+            { x: 280, y: 820,  w: 20, h: 220 },
+            { x: 420, y: 660,  w: 20, h: 220 },
+            { x: 280, y: 480,  w: 20, h: 220 },
+            { x: 420, y: 320,  w: 20, h: 220 },
+            // tiny ledge at top
+            { x: 460, y: 260, w: 30, h: 10 },
+            { x: 600, y: 200, w: 30, h: 10 },
+            { x: 760, y: 160, w: 30, h: 10 },
+            { x: 920, y: 120, w: 200, h: 100 },
+        ],
+        spikes: [], saws: [], lasers: [], movers: [], crumblers: [], bouncers: [], boosters: [],
+        coins: [
+            { x: 360, y: 1080 }, { x: 360, y: 760 }, { x: 360, y: 440 },
+            { x: 475, y: 220 }, { x: 615, y: 160 }, { x: 775, y: 120 },
+        ],
+        checkpoint: { x: 360, y: 780 },
+        goal: { x: 990, y: 60, w: 40, h: 60 },
+    },
+
+    // ---- 42: Boost Hops — bouncer to 1-block landings
+    {
+        bg: 'candy',
+        worldW: 2100, worldH: 700,
+        spawn: { x: 60, y: 540 },
+        platforms: [
+            { x: 0, y: 620, w: 180, h: 60 },
+            { x: 1940, y: 380, w: 160, h: 300 },
+            // tiny landings to control direction between bounces
+            { x: 360, y: 320, w: 26, h: 10 },
+            { x: 600, y: 250, w: 26, h: 10 },
+            { x: 840, y: 200, w: 26, h: 10 },
+            { x: 1080, y: 250, w: 26, h: 10 },
+            { x: 1320, y: 320, w: 26, h: 10 },
+            { x: 1560, y: 390, w: 26, h: 10 },
+            { x: 1780, y: 380, w: 26, h: 10 },
+        ],
+        spikes: [ { x: 180, y: 660, w: 1760, h: 20 } ],
+        saws: [], lasers: [], movers: [], crumblers: [],
+        bouncers: [
+            { x: 220, y: 600, w: 60, h: 20, power: 22 },
+            { x: 460, y: 600, w: 60, h: 20, power: 22 },
+            { x: 700, y: 600, w: 60, h: 20, power: 22 },
+            { x: 940, y: 600, w: 60, h: 20, power: 22 },
+            { x: 1180, y: 600, w: 60, h: 20, power: 22 },
+            { x: 1420, y: 600, w: 60, h: 20, power: 22 },
+            { x: 1660, y: 600, w: 60, h: 20, power: 22 },
+        ],
+        boosters: [],
+        coins: [
+            { x: 373, y: 280 }, { x: 613, y: 210 }, { x: 853, y: 160 },
+            { x: 1093, y: 210 }, { x: 1333, y: 280 }, { x: 1573, y: 350 },
+        ],
+        checkpoint: { x: 853, y: 170 },
+        goal: { x: 2020, y: 320, w: 40, h: 60 },
+    },
+
+    // ---- 43: Coin Tower — vertical 1-block climb
+    {
+        bg: 'forest',
+        worldW: 800, worldH: 1600,
+        spawn: { x: 80, y: 1500 },
+        platforms: [
+            { x: 0, y: 1560, w: 800, h: 40 },
+            { x: 0, y: 0, w: 24, h: 1560 },
+            { x: 776, y: 0, w: 24, h: 1560 },
+            { x: 160, y: 1400, w: 26, h: 10 },
+            { x: 320, y: 1320, w: 26, h: 10 },
+            { x: 480, y: 1240, w: 26, h: 10 },
+            { x: 640, y: 1160, w: 26, h: 10 },
+            { x: 480, y: 1080, w: 26, h: 10 },
+            { x: 320, y: 1000, w: 26, h: 10 },
+            { x: 160, y: 920,  w: 26, h: 10 },
+            { x: 320, y: 840,  w: 26, h: 10 },
+            { x: 480, y: 760,  w: 26, h: 10 },
+            { x: 640, y: 680,  w: 26, h: 10 },
+            { x: 480, y: 600,  w: 26, h: 10 },
+            { x: 320, y: 520,  w: 26, h: 10 },
+            { x: 160, y: 440,  w: 26, h: 10 },
+            { x: 320, y: 360,  w: 26, h: 10 },
+            { x: 480, y: 280,  w: 26, h: 10 },
+            { x: 320, y: 200,  w: 26, h: 10 },
+            { x: 260, y: 100,  w: 260, h: 60 },
+        ],
+        spikes: [], saws: [], lasers: [], movers: [], crumblers: [], bouncers: [], boosters: [],
+        coins: [
+            { x: 173, y: 1360 }, { x: 333, y: 1280 }, { x: 493, y: 1200 },
+            { x: 653, y: 1120 }, { x: 493, y: 1040 }, { x: 333, y: 960 },
+            { x: 173, y: 880 }, { x: 333, y: 800 }, { x: 493, y: 720 },
+            { x: 653, y: 640 }, { x: 493, y: 560 }, { x: 333, y: 480 },
+            { x: 173, y: 400 }, { x: 333, y: 320 }, { x: 493, y: 240 },
+        ],
+        checkpoint: { x: 173, y: 880 },
+        goal: { x: 370, y: 40, w: 40, h: 60 },
+    },
+
+    // ---- 44: The Maze — winding 1-block path with turns
+    {
+        bg: 'cyber',
+        worldW: 1800, worldH: 800,
+        spawn: { x: 60, y: 540 },
+        platforms: [
+            { x: 0, y: 620, w: 160, h: 60 },
+            { x: 1640, y: 360, w: 160, h: 320 },
+            // winding path
+            { x: 220, y: 560, w: 26, h: 10 },
+            { x: 320, y: 500, w: 26, h: 10 },
+            { x: 420, y: 440, w: 26, h: 10 },
+            { x: 520, y: 380, w: 26, h: 10 },
+            { x: 620, y: 320, w: 26, h: 10 },
+            { x: 720, y: 380, w: 26, h: 10 },   // turn down
+            { x: 820, y: 440, w: 26, h: 10 },
+            { x: 920, y: 500, w: 26, h: 10 },
+            { x: 1020, y: 560, w: 26, h: 10 },
+            { x: 1120, y: 500, w: 26, h: 10 },  // back up
+            { x: 1220, y: 440, w: 26, h: 10 },
+            { x: 1320, y: 380, w: 26, h: 10 },
+            { x: 1420, y: 320, w: 26, h: 10 },
+            { x: 1520, y: 380, w: 26, h: 10 },
+        ],
+        spikes: [ { x: 160, y: 660, w: 1480, h: 20 } ],
+        saws: [], lasers: [], movers: [], crumblers: [], bouncers: [], boosters: [],
+        coins: [
+            { x: 333, y: 460 }, { x: 533, y: 340 }, { x: 633, y: 280 },
+            { x: 833, y: 400 }, { x: 1033, y: 520 }, { x: 1233, y: 400 },
+            { x: 1433, y: 280 }, { x: 1533, y: 340 },
+        ],
+        checkpoint: { x: 833, y: 460 },
+        goal: { x: 1720, y: 300, w: 40, h: 60 },
+    },
+
+    // ---- 45: The Pinnacle — ultimate precision finale
+    {
+        bg: 'cosmic',
+        worldW: 2400, worldH: 900,
+        spawn: { x: 60, y: 640 },
+        platforms: [
+            { x: 0, y: 720, w: 200, h: 80 },
+            { x: 2240, y: 300, w: 160, h: 600 },
+            // section 1: tiny ledges over saw pit
+            { x: 260, y: 660, w: 22, h: 10 },
+            { x: 360, y: 600, w: 22, h: 10 },
+            { x: 460, y: 540, w: 22, h: 10 },
+            { x: 560, y: 480, w: 22, h: 10 },
+            // section 2: wall jump tower
+            { x: 700, y: 220, w: 20, h: 320 },
+            { x: 820, y: 100, w: 20, h: 400 },
+            { x: 720, y: 80, w: 100, h: 12 },
+            // section 3: hover hops
+            { x: 920, y: 200, w: 22, h: 10 },
+            { x: 1060, y: 280, w: 22, h: 10 },
+            { x: 1200, y: 200, w: 22, h: 10 },
+            { x: 1340, y: 280, w: 22, h: 10 },
+            { x: 1480, y: 200, w: 22, h: 10 },
+            // section 4: bouncer + tiny landings
+            { x: 1620, y: 400, w: 24, h: 10 },
+            { x: 1780, y: 320, w: 24, h: 10 },
+            { x: 1940, y: 240, w: 24, h: 10 },
+            { x: 2100, y: 280, w: 24, h: 10 },
+        ],
+        spikes: [
+            { x: 200, y: 780, w: 500, h: 20 },
+            { x: 840, y: 780, w: 1400, h: 20 },
+        ],
+        saws: [
+            { x: 400, y: 700, r: 20, ax: 300, bx: 600, speed: 0.014 },
+            { x: 1000, y: 380, r: 22, ax: 920, bx: 1500, speed: 0.014, phase: 0.5 },
+        ],
+        lasers: [
+            { x1: 770, y1: 0, x2: 770, y2: 80, period: 60, duty: 0.5, phase: 0 },
+            { x1: 870, y1: 0, x2: 870, y2: 80, period: 60, duty: 0.5, phase: 30 },
+        ],
+        movers: [],
+        crumblers: [],
+        bouncers: [
+            { x: 1500, y: 500, w: 70, h: 18, power: 24 },
+        ],
+        boosters: [
+            { x: 1640, y: 386, w: 50, h: 14, dx: 10, dy: 0 },
+        ],
+        coins: [
+            { x: 273, y: 620 }, { x: 373, y: 560 }, { x: 473, y: 500 }, { x: 573, y: 440 },
+            { x: 770, y: 40 }, { x: 933, y: 160 }, { x: 1073, y: 240 }, { x: 1213, y: 160 },
+            { x: 1353, y: 240 }, { x: 1493, y: 160 }, { x: 1633, y: 360 }, { x: 1793, y: 280 },
+            { x: 1953, y: 200 }, { x: 2113, y: 240 },
+        ],
+        checkpoint: { x: 770, y: 60 },
+        goal: { x: 2320, y: 240, w: 40, h: 60 },
+    },
+);
+
 // Strip any helper markers in the new levels too (none currently, but keep symmetric)
 window.LEVELS.forEach(lvl => {
     lvl.platforms = lvl.platforms.filter(p => !p._mover);
 });
+
+// ============================================================
+// Build long line of stepping stones for level 37 (Tight Rope)
+// programmatically (avoids 30+ near-identical objects in the data).
+// ============================================================
+(function tightRopeBuild() {
+    const lvl = window.LEVELS[36]; // index 36 = level 37
+    if (!lvl) return;
+    // Sine-wave height between 360 and 480, regular x spacing
+    for (let i = 0; i < 22; i++) {
+        const x = 220 + i * 85;
+        const y = 430 + Math.round(Math.sin(i * 0.55) * 50);
+        lvl.platforms.push({ x, y, w: 26, h: 10 });
+    }
+})();
