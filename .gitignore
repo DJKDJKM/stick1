@@ -1,0 +1,21 @@
+# Editor / IDE / agent
+.vscode/
+.idea/
+.claude/
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+
+# Optional tools
+node_modules/
+dist/
+build/
+.cache/

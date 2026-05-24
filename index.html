@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stickman Parkour</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="hud" class="hidden">
+            <div class="hud-row">
+                <div class="hud-chip">Level <span id="current-level">1</span></div>
+                <div class="hud-chip">Time <span id="time">0.00</span>s</div>
+                <div class="hud-chip">Best <span id="best-time">—</span></div>
+                <div class="hud-chip">Deaths <span id="deaths">0</span></div>
+                <div class="hud-chip coin-chip">🪙 <span id="wallet">0</span></div>
+                <div class="hud-chip">Run <span id="coins">0</span>/<span id="coins-total">0</span></div>
+            </div>
+            <div class="hud-row hud-controls">
+                <span>A / D — move</span>
+                <span>Space / W — jump (double jump)</span>
+                <span>S — slide</span>
+                <span>Wall jump from wall slide</span>
+                <span>R — restart</span>
+                <span>Esc — pause</span>
+            </div>
+        </div>
+
+        <div id="menu">
+            <div id="menu-panel">
+                <h1>Stickman Parkour</h1>
+                <p class="tagline">Run · Jump · Slide · Wall-Jump</p>
+
+                <div id="screen-main" class="screen">
+                    <button class="primary" id="start-btn">Play</button>
+                    <button id="levels-btn">Level Select</button>
+                    <button id="shop-btn">🛍️ Skin Shop</button>
+                    <button id="daily-btn">🎁 Daily Reward</button>
+                    <button id="achievements-btn">🏆 Achievements</button>
+                    <button id="controls-btn">Controls</button>
+                </div>
+
+                <div id="screen-levels" class="screen hidden">
+                    <h2>Select Level</h2>
+                    <div id="level-grid"></div>
+                    <button id="back-from-levels">Back</button>
+                </div>
+
+                <div id="screen-controls" class="screen hidden">
+                    <h2>Controls</h2>
+                    <ul class="controls-list">
+                        <li><b>A / D</b> or <b>← / →</b> — Move</li>
+                        <li><b>Space</b> / <b>W</b> / <b>↑</b> — Jump (press again in air for double jump)</li>
+                        <li><b>S</b> / <b>↓</b> — Slide (fits under low gaps, slows you on walls)</li>
+                        <li><b>Wall Jump</b> — Press jump while sliding down a wall</li>
+                        <li><b>R</b> — Restart current level</li>
+                        <li><b>Esc</b> — Pause</li>
+                    </ul>
+                    <button id="back-from-controls">Back</button>
+                </div>
+
+                <div id="screen-shop" class="screen hidden">
+                    <div class="shop-header">
+                        <h2>Skin Shop</h2>
+                        <div class="wallet-chip">🪙 <span id="wallet-shop">0</span></div>
+                    </div>
+                    <p class="hint">Buy skins to get permanent perks. Equipping a skin changes your color & abilities.</p>
+                    <div id="shop-grid"></div>
+                    <button id="back-from-shop">Back</button>
+                </div>
+
+                <div id="screen-daily" class="screen hidden">
+                    <h2>🎁 Daily Reward</h2>
+                    <p id="daily-status" class="hint">Loading…</p>
+                    <div id="daily-days"></div>
+                    <button class="primary" id="claim-btn">Claim</button>
+                    <button id="back-from-daily">Back</button>
+                </div>
+
+                <div id="screen-result" class="screen hidden">
+                    <h2 id="result-title">Level Complete!</h2>
+                    <div id="result-stats"></div>
+                    <button class="primary" id="next-level-btn">Next Level</button>
+                    <button id="restart-btn">Retry</button>
+                    <button id="result-menu-btn">Level Select</button>
+                </div>
+
+                <div id="screen-pause" class="screen hidden">
+                    <h2>Paused</h2>
+                    <button class="primary" id="resume-btn">Resume</button>
+                    <button id="pause-restart-btn">Restart Level</button>
+                    <button id="pause-menu-btn">Main Menu</button>
+                </div>
+
+                <div id="screen-achievements" class="screen hidden">
+                    <h2>🏆 Achievements</h2>
+                    <p id="ach-summary" class="hint">0 / 0 unlocked</p>
+                    <div id="achievements-list"></div>
+                    <button id="back-from-achievements">Back</button>
+                </div>
+
+                <div id="screen-win" class="screen hidden">
+                    <h2>You finished the game!</h2>
+                    <div id="win-stats"></div>
+                    <button class="primary" id="win-again-btn">Play Again</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="toast" class="hidden"></div>
+    </div>
+
+    <!-- Load order matters: data → save → audio → render → game -->
+    <script src="js/data.js"></script>
+    <script src="js/save.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/render.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>
