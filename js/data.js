@@ -160,6 +160,8 @@ window.ACHIEVEMENTS = [
       check: s => s.coins >= 100 },
     { id: 'bouncy',         name: 'Bouncy Boy',     desc: 'Bounce on a trampoline 25 times', icon: '🪀',
       check: s => s.stats.bounces >= 25 },
+    { id: 'boost_master',   name: 'Boost Master',   desc: 'Use boost 25 times',              icon: '⚡',
+      check: s => (s.stats.boosts || 0) >= 25 },
     { id: 'all_skins',      name: 'Drip Master',    desc: 'Own all 15 skins',                icon: '👑',
       check: s => Object.keys(s.ownedSkins).length >= SKINS.length },
     { id: 'world_master',   name: 'World Master',   desc: 'Complete every level',            icon: '🌟',

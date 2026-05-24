@@ -44,6 +44,15 @@
         wallSlideFall: 2.6,
         coyote: 6,
         jumpBuffer: 6,
+        // SpeedRunners-style boost
+        boostMax: 100,
+        boostCost: 50,
+        boostDuration: 30,       // frames at boosted cap
+        boostSpeedMult: 1.7,
+        boostRegen: 0.18,        // per frame, passive
+        boostFromCoin: 12,
+        boostFromBounce: 25,
+        boostFromBooster: 15,
     };
 
     function effectivePhysics() {
@@ -76,6 +85,8 @@
         coyote: 0,
         jumpBuffer: 0,
         animT: 0,
+        boost: 0,            // current meter 0..boostMax
+        boostFrames: 0,      // remaining frames of active boost
         _lastFallVy: 0,
         _riding: null,
     };
@@ -210,6 +221,9 @@
         player.airJumpsLeft = eff.airJumps;
         player.coyote = 0;
         player.jumpBuffer = 0;
+        // keep boost meter on respawn so deaths don't fully reset progress;
+        // active-boost frames clear though
+        player.boostFrames = 0;
     }
 
     function restartLevel() { enterLevel(game.levelIndex); }
@@ -338,16 +352,51 @@
         const wantRight = held('d', 'ArrowRight');
         const wantDown = held('s', 'ArrowDown');
         const jumpEdge = justPressed(' ', 'w', 'ArrowUp');
+        const boostEdge = justPressed('Shift');
+
+        // Boost activation (consume meter, kick the player forward)
+        if (boostEdge && player.boost >= BASE.boostCost && player.boostFrames <= 0) {
+            player.boost -= BASE.boostCost;
+            player.boostFrames = BASE.boostDuration;
+            const dir = (wantLeft && !wantRight) ? -1 : (wantRight && !wantLeft ? 1 : player.facing);
+            player.facing = dir;
+            const boostSpeed = eff.maxSpeed * BASE.boostSpeedMult;
+            player.vx = dir * boostSpeed;
+            if (player.vy > 0) player.vy = Math.min(player.vy, 0); // tiny upward correction
+            SFX.boost();
+            Save.incStat('boosts', 1);
+            for (let i = 0; i < 12; i++) {
+                game.particles.push({
+                    x: player.x + player.w / 2 - dir * 6,
+                    y: player.y + player.h / 2 + (Math.random() - 0.5) * 14,
+                    vx: -dir * (1.5 + Math.random() * 1.5), vy: (Math.random() - 0.5),
+                    life: 22, age: 0, r: 2 + Math.random() * 2,
+                    color: '#ffd166', gravity: 0,
+                });
+            }
+        }
+
+        const inBoost = player.boostFrames > 0;
+        if (inBoost) player.boostFrames--;
 
         let accel = player.grounded ? eff.accelGround : eff.accelAir;
         if (player.sliding) accel *= 0.2;
 
         if (wantLeft)  { player.vx -= accel; player.facing = -1; }
         if (wantRight) { player.vx += accel; player.facing = 1; }
-        if (!wantLeft && !wantRight && player.grounded && !player.sliding) {
-            player.vx *= eff.frictionGround;
-        } else if (!player.grounded) {
-            player.vx *= eff.frictionAir;
+
+        // Friction (suppressed during active boost so speed sustains)
+        if (!inBoost) {
+            if (!wantLeft && !wantRight && player.grounded && !player.sliding) {
+                player.vx *= eff.frictionGround;
+            } else if (!player.grounded) {
+                player.vx *= eff.frictionAir;
+            }
+        }
+
+        // Passive boost-meter regen
+        if (player.boost < BASE.boostMax) {
+            player.boost = Math.min(BASE.boostMax, player.boost + BASE.boostRegen);
         }
 
         // Slide start
@@ -372,7 +421,8 @@
         }
         if (player.sliding && player.grounded) player.vx *= 0.96;
 
-        const cap = player.sliding ? eff.maxSpeed * 1.35 : eff.maxSpeed;
+        const baseCap = player.sliding ? eff.maxSpeed * 1.35 : eff.maxSpeed;
+        const cap = baseCap * (inBoost ? BASE.boostSpeedMult : 1);
         player.vx = clamp(player.vx, -cap, cap);
 
         if (jumpEdge) player.jumpBuffer = BASE.jumpBuffer;
@@ -487,6 +537,7 @@
                 player.grounded = false;
                 player.airJumpsLeft = eff.airJumps;
                 b._pressed = 8;
+                player.boost = Math.min(BASE.boostMax, player.boost + BASE.boostFromBounce);
                 SFX.djump();
                 Save.incStat('bounces', 1);
                 spawnParticles(b.x + b.w / 2, b.y, 12,
@@ -503,6 +554,7 @@
                 if (bo.dy) player.vy = bo.dy;
                 player.airJumpsLeft = eff.airJumps;
                 bo._cooldown = 12;
+                player.boost = Math.min(BASE.boostMax, player.boost + BASE.boostFromBooster);
                 SFX.wjump();
                 spawnParticles(bo.x + bo.w / 2, bo.y + bo.h / 2, 10,
                     { spread: 4, life: 22, color: '#00f5d4', gravity: 0 });
@@ -543,6 +595,7 @@
                 game.coinsThisRun++;
                 Save.addCoins(1);
                 Save.incStat('coinsEver', 1);
+                player.boost = Math.min(BASE.boostMax, player.boost + BASE.boostFromCoin);
                 SFX.coin();
                 refreshHud();
                 spawnParticles(c.x, c.y, 8, { spread: 4, life: 24, color: '#ffd166', gravity: -0.05, r: 2 });
@@ -590,6 +643,26 @@
                 vx: (Math.random() - 0.5) * 0.6, vy: (Math.random() - 0.5) * 0.6,
                 life: 24, age: 0, r: 3, color: col, gravity: 0,
             });
+        }
+
+        // Active-boost streak particles
+        if (inBoost && game.runtime.time % 2 === 0) {
+            game.particles.push({
+                x: player.x + player.w / 2 - player.facing * 4,
+                y: player.y + player.h / 2 + (Math.random() - 0.5) * 24,
+                vx: -player.facing * (1 + Math.random()), vy: 0,
+                life: 14, age: 0, r: 2 + Math.random() * 2,
+                color: '#ffd166', gravity: 0,
+            });
+        }
+
+        // Update HUD boost bar each frame (cheap DOM write)
+        const fill = $('boost-fill');
+        if (fill) {
+            const pct = (player.boost / BASE.boostMax) * 100;
+            fill.style.width = pct + '%';
+            const chip = $('boost-chip');
+            if (chip) chip.classList.toggle('full', player.boost >= BASE.boostCost);
         }
 
         player.animT += Math.abs(player.vx) * 0.07 + 0.04;

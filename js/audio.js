@@ -43,5 +43,12 @@
             setTimeout(() => beep(1100, 0.08, 'triangle', 0.06), 160);
             setTimeout(() => beep(1480, 0.18, 'triangle', 0.07), 240);
         },
+        boost()   {
+            // rising swoosh
+            beep(360, 0.06, 'square', 0.06);
+            setTimeout(() => beep(620, 0.06, 'square', 0.06), 25);
+            setTimeout(() => beep(960, 0.08, 'square', 0.06), 55);
+            setTimeout(() => beep(1280, 0.10, 'square', 0.05), 95);
+        },
     };
 })();

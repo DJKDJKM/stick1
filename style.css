@@ -70,6 +70,38 @@ html, body {
     border-color: rgba(255, 209, 102, 0.45);
 }
 
+.hud-chip.boost-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 245, 212, 0.12);
+    border-color: rgba(0, 245, 212, 0.35);
+    color: #d6fff7;
+}
+.boost-bar {
+    width: 80px;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.boost-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00f5d4, #ffd166 65%, #ef476f);
+    width: 0%;
+    transition: width 0.12s linear;
+}
+.hud-chip.boost-chip.full {
+    border-color: rgba(255, 209, 102, 0.85);
+    box-shadow: 0 0 14px rgba(255, 209, 102, 0.45);
+    animation: boost-pulse 0.9s ease-in-out infinite;
+}
+@keyframes boost-pulse {
+    0%, 100% { box-shadow: 0 0 14px rgba(255, 209, 102, 0.40); }
+    50%      { box-shadow: 0 0 22px rgba(255, 209, 102, 0.85); }
+}
+
 .hud-controls {
     margin-top: 4px;
     font-size: 11px;

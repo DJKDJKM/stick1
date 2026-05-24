@@ -15,7 +15,7 @@ Pure vanilla JS — no build step, no dependencies. Open `index.html` and play.
 ### Gameplay
 - **35 hand-designed levels** organized into **6 chapters** (Beginnings → Skills → Variety → Heights → Bounce → Mastery)
 - **Animated stickman** with distinct poses: running, jumping, falling, sliding, wall-sliding
-- **Full move-set**: double jump, **wall slide + wall jump**, **slide-under low ceilings**
+- **Full move-set**: double jump, **wall slide + wall jump**, **slide-under low ceilings**, **SpeedRunners-style ⚡ boost**
 - **Smooth feel**: coyote time, jump buffering, screen shake, parallax background, particle effects
 - **Death ragdoll** — your stickman literally falls apart when you die
 - **Checkpoints** inside longer levels
@@ -51,6 +51,7 @@ Pure vanilla JS — no build step, no dependencies. Open `index.html` and play.
 | Move | **A / D** or **← / →** |
 | Jump (and double jump) | **Space** / **W** / **↑** |
 | Slide (fit under low ceilings) | **S** / **↓** |
+| ⚡ Boost (burst of speed) | **Shift** (needs ≥ 50 boost meter) |
 | Wall jump | Press jump while sliding down a wall |
 | Restart level | **R** |
 | Pause | **Esc** |
@@ -77,9 +78,19 @@ Pure vanilla JS — no build step, no dependencies. Open `index.html` and play.
 | **Mythic** | 175 🪙 | +15% speed/jump · -15% gravity · rainbow trail |
 | **Cosmic** | 220 🪙 | TRIPLE jump · all-stats maxed · rainbow trail |
 
-## 🏆 Achievements (13)
+## 🏆 Achievements (14)
 
-First Steps · Persistent · Coin Collector · Untouchable · Speed Demon · Wall Crawler · Sky High · Fashionista · Chapter Done · Loaded · Bouncy Boy · Drip Master · World Master.
+First Steps · Persistent · Coin Collector · Untouchable · Speed Demon · Wall Crawler · Sky High · Fashionista · Chapter Done · Loaded · Bouncy Boy · Boost Master · Drip Master · World Master.
+
+## ⚡ The Boost meter
+
+Inspired by SpeedRunners. You have a 0–100 boost meter that charges from:
+- collecting coins (+12)
+- bouncing on a trampoline (+25)
+- hitting a speed pad (+15)
+- passive over time (+~10 / second)
+
+Press **Shift** when the meter is at ≥ 50 to consume half and get **~0.5 seconds of 1.7× speed** with a glowing yellow trail and a swoosh sound. Friction is suppressed during the boost so the burst is sustained.
 
 ---
 
