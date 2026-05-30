@@ -2,12 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <title>Stickman Parkour</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="game-container">
+        <button id="mobile-toggle" type="button">📱 Mobile Mode</button>
+        <div id="rotate-hint">🔄 Please rotate your phone<br>landscape for the best experience.</div>
         <canvas id="gameCanvas"></canvas>
 
         <div id="hud" class="hidden">
@@ -147,6 +151,18 @@
         </div>
 
         <div id="toast" class="hidden"></div>
+
+        <div id="touch-controls">
+            <div class="tc-side tc-left">
+                <button class="tc-btn" data-key="ArrowLeft" aria-label="Move left">←</button>
+                <button class="tc-btn" data-key="ArrowRight" aria-label="Move right">→</button>
+            </div>
+            <div class="tc-side tc-right">
+                <button class="tc-btn" data-key="ArrowDown" aria-label="Slide">⬇<br><span class="tc-lbl">SLIDE</span></button>
+                <button class="tc-btn tc-boost" data-key="Shift" aria-label="Boost">⚡<br><span class="tc-lbl">BOOST</span></button>
+                <button class="tc-btn tc-jump" data-key=" " aria-label="Jump">▲<br><span class="tc-lbl">JUMP</span></button>
+            </div>
+        </div>
     </div>
 
     <!-- Load order matters: data → save → audio → render → game -->

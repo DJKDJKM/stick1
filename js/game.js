@@ -1136,4 +1136,61 @@
     // Refresh the badge after claim / closing the daily screen
     $('claim-btn').addEventListener('click', refreshDailyBadge);
     $('back-from-daily').addEventListener('click', refreshDailyBadge);
+
+    // ---- Mobile mode & touch controls ----------------------
+    function applyMobileMode() {
+        const on = !!Save.settings().mobileMode;
+        document.body.classList.toggle('mobile', on);
+        $('mobile-toggle').textContent = on ? '🖥️ Desktop Mode' : '📱 Mobile Mode';
+    }
+    $('mobile-toggle').addEventListener('click', () => {
+        const cur = !!Save.settings().mobileMode;
+        Save.setSetting('mobileMode', !cur);
+        applyMobileMode();
+    });
+
+    // Sync 'in-game' class to body from the current state, every frame.
+    // (The render loop is the single source of truth that runs whenever
+    // a game-state change matters for the touch overlay's visibility.)
+    function syncInGameClass() {
+        const inGame = game.state === 'playing' || game.state === 'dying';
+        document.body.classList.toggle('in-game', inGame);
+    }
+    // Wrap draw() so syncing runs even when looping is active
+    const _origDraw = draw;
+    draw = function () { _origDraw(); syncInGameClass(); };
+    // Also sync after any button click that might change state
+    document.addEventListener('click', () => { setTimeout(syncInGameClass, 0); }, true);
+
+    // Touch handlers — bind every .tc-btn to its data-key
+    function bindTouchBtn(btn) {
+        const key = btn.dataset.key;
+        if (!key) return;
+        const press = (e) => {
+            e.preventDefault();
+            if (!keys[key]) pressed.add(key);
+            keys[key] = true;
+            btn.classList.add('held');
+            SFX.ensure();
+        };
+        const release = (e) => {
+            if (e) e.preventDefault();
+            keys[key] = false;
+            btn.classList.remove('held');
+        };
+        btn.addEventListener('touchstart', press, { passive: false });
+        btn.addEventListener('touchend', release, { passive: false });
+        btn.addEventListener('touchcancel', release, { passive: false });
+        // Also allow mouse for desktop testing of the touch overlay
+        btn.addEventListener('mousedown', press);
+        btn.addEventListener('mouseup', release);
+        btn.addEventListener('mouseleave', release);
+        // Prevent context menu on long-press
+        btn.addEventListener('contextmenu', (e) => e.preventDefault());
+    }
+    document.querySelectorAll('.tc-btn').forEach(bindTouchBtn);
+
+    // Apply persisted mobile setting at boot
+    applyMobileMode();
+    syncInGameClass();
 })();
